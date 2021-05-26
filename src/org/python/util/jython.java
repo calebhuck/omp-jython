@@ -17,6 +17,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+//import com.sun.security.ntlm.Server;
 import org.python.Version;
 import org.python.core.BytecodeLoader;
 import org.python.core.CompileMode;
@@ -34,6 +35,14 @@ import org.python.core.PyStringMap;
 import org.python.core.PySystemState;
 import org.python.core.RegistryKey;
 import org.python.core.imp;
+
+// omp imports
+import java.net.*;
+import java.io.*;
+import java.util.Scanner;
+import java.nio.charset.StandardCharsets;
+
+import java.lang.*;
 
 public class jython {
 
@@ -589,6 +598,80 @@ public class jython {
 
             } else if (opts.filename != null) {
                 // The script is designated by file (or directory) name.
+                try {
+
+                    /*
+                    FileInputStream py_file = new FileInputStream(opts.filename);
+                    //Reader reader = new InputStreamReader(py_file);
+                    String src_code = "";
+                    while (reader.) {
+                        String data = reader.next();
+                        src_code += data;
+                    }
+
+
+
+                    StringBuilder stringBuffer = new StringBuilder();
+                    Reader reader = new InputStreamReader(new FileInputStream(opts.filename), StandardCharsets.UTF_8);
+                    char[] buff = new char[500];
+                    for (int charsRead; (charsRead = reader.read(buff)) != -1; ) {
+                        stringBuffer.append(buff, 0, charsRead);
+                    }
+                    String src_code = stringBuffer.toString();
+                    System.out.println(src_code);
+
+                    ServerSocket server = new ServerSocket(0);
+                    int port = server.getLocalPort();
+                    */
+
+
+
+
+                    ProcessBuilder processBuilder = new ProcessBuilder("python3", "/Users/calebhuck/PycharmProjects/OpenMPy/Main.py");
+                    processBuilder.redirectErrorStream(true);
+
+                    Process process = processBuilder.start();
+
+                    BufferedReader _reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+                    String line;
+                    String src_code = "";
+                    while ((line = _reader.readLine()) != null) {
+                        src_code += line + '\n';
+                    }
+
+                    System.out.print(src_code);
+
+
+
+
+
+
+                } catch (FileNotFoundException e) {
+                    System.out.println("An error occurred.");
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    System.out.println("An error occurred.");
+                    e.printStackTrace();
+                }
+
+
+
+
+
+
+
+
+
+
+
+
+                //System.out.println(System.getProperty("user.dir") + "/" + opts.filename);
+
+                exit(Status.OK);
+                System.out.println("exit didn't work :(");
+
+
                 PyString pyFileName = Py.fileSystemEncode(opts.filename);
                 sys.argv.set(0, pyFileName);
 
