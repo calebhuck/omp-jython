@@ -605,16 +605,39 @@ public class jython {
                 //OMP preprocessor communication here
                 try {
                     String j_home = System.getenv("JYTHON_HOME");
-                    if (!j_home.endsWith("/"))
+                    if (j_home == null)
                     {
-                        j_home = j_home.concat("/");
+                        System.err.println("Error: please set JYTHON_HOME variable");
+                        exit(Status.ERROR);
                     }
+
+                    boolean is_windows = System.getProperty("os.name").startsWith("Windows");
+                    if (is_windows)
+                    {
+                        if (!j_home.endsWith("\\"))
+                        {
+                            j_home = j_home.concat("\\");
+                        }
+                    }
+                    else
+                    {
+                        if (!j_home.endsWith("/"))
+                        {
+                            j_home = j_home.concat("/");
+                        }
+                    }
+                    System.out.println("j_home: " + j_home);
                     //System.out.println("j_home = " + j_home);
                     String absolutePath = FileSystems.getDefault().getPath(opts.filename).normalize().toAbsolutePath().toString();
-                    ProcessBuilder processBuilder = new ProcessBuilder("python3", j_home + "/preprocessor/Main.py", absolutePath);
-                    processBuilder.redirectErrorStream(true);
+                    System.out.println("absolute filename: " + absolutePath);
+                    ProcessBuilder p_builder = null;
+                    if (!is_windows)
+                        p_builder = new ProcessBuilder("python3", j_home + "/preprocessor/Main.py", absolutePath);
+                    else
+                        p_builder = new ProcessBuilder("py", "-3",  j_home + "preprocessor\\Main.py", absolutePath);
+                    p_builder.redirectErrorStream(true);
 
-                    Process process = processBuilder.start();
+                    Process process = p_builder.start();
 
                     BufferedReader _reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
 
@@ -627,9 +650,20 @@ public class jython {
 
                     //System.out.print(src_code);
                     //String run_file = FileSystems.getDefault().getPath("run_file.py").normalize().toAbsolutePath().toString();
-                    String[] split_path = opts.filename.split("/");
+                    String[] split_path;
+                    String run_file;
+                    if (!is_windows)
+                    {
+                        split_path = opts.filename.split("/");
+                        run_file = j_home + "output/" + split_path[split_path.length - 1];
+                    }
+                    else
+                    {
+                        String temp_file_name = opts.filename.replace("\\", "/");
+                        split_path = temp_file_name.split("/");
+                        run_file = j_home + "output\\" + split_path[split_path.length - 1];
+                    }
 
-                    String run_file = j_home + "output/" + split_path[split_path.length - 1];
                     //System.out.println("out file: " + run_file);
                     BufferedWriter file_writer = null;
                     try {
