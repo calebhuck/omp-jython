@@ -7,6 +7,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
@@ -18,6 +20,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 //import com.sun.security.ntlm.Server;
+import org.apache.tools.ant.util.FileUtils;
 import org.python.Version;
 import org.python.core.BytecodeLoader;
 import org.python.core.CompileMode;
@@ -598,36 +601,17 @@ public class jython {
 
             } else if (opts.filename != null) {
                 // The script is designated by file (or directory) name.
+
+                //OMP preprocessor communication here
                 try {
-
-                    /*
-                    FileInputStream py_file = new FileInputStream(opts.filename);
-                    //Reader reader = new InputStreamReader(py_file);
-                    String src_code = "";
-                    while (reader.) {
-                        String data = reader.next();
-                        src_code += data;
+                    String j_home = System.getenv("JYTHON_HOME");
+                    if (!j_home.endsWith("/"))
+                    {
+                        j_home = j_home.concat("/");
                     }
-
-
-
-                    StringBuilder stringBuffer = new StringBuilder();
-                    Reader reader = new InputStreamReader(new FileInputStream(opts.filename), StandardCharsets.UTF_8);
-                    char[] buff = new char[500];
-                    for (int charsRead; (charsRead = reader.read(buff)) != -1; ) {
-                        stringBuffer.append(buff, 0, charsRead);
-                    }
-                    String src_code = stringBuffer.toString();
-                    System.out.println(src_code);
-
-                    ServerSocket server = new ServerSocket(0);
-                    int port = server.getLocalPort();
-                    */
-
-
-
-
-                    ProcessBuilder processBuilder = new ProcessBuilder("python3", "/Users/calebhuck/PycharmProjects/OpenMPy/Main.py");
+                    //System.out.println("j_home = " + j_home);
+                    String absolutePath = FileSystems.getDefault().getPath(opts.filename).normalize().toAbsolutePath().toString();
+                    ProcessBuilder processBuilder = new ProcessBuilder("python3", j_home + "/preprocessor/Main.py", absolutePath);
                     processBuilder.redirectErrorStream(true);
 
                     Process process = processBuilder.start();
@@ -637,22 +621,47 @@ public class jython {
                     String line;
                     String src_code = "";
                     while ((line = _reader.readLine()) != null) {
+                        // May need to fix line endings on windows?
                         src_code += line + '\n';
                     }
 
-                    System.out.print(src_code);
+                    //System.out.print(src_code);
+                    //String run_file = FileSystems.getDefault().getPath("run_file.py").normalize().toAbsolutePath().toString();
+                    String[] split_path = opts.filename.split("/");
 
+                    String run_file = j_home + "output/" + split_path[split_path.length - 1];
+                    //System.out.println("out file: " + run_file);
+                    BufferedWriter file_writer = null;
+                    try {
+                        File dir = new File(j_home + "output");
+                        File[] files = dir.listFiles();
+                        for (File file : files)
+                        {
+                            if (!file.delete())
+                            {
+                                System.err.println("Failed to delete " + file);
+                            }
+                        }
 
-
+                        FileWriter outstream = new FileWriter(run_file, false);
+                        file_writer = new BufferedWriter(outstream);
+                        file_writer.write(src_code);
+                        opts.filename = run_file;
+                    } catch (IOException e) {
+                        System.err.println("Error: " + e.getMessage());
+                    } finally {
+                        if (file_writer != null)
+                        {
+                            file_writer.close();
+                        }
+                    }
 
 
 
                 } catch (FileNotFoundException e) {
-                    System.out.println("An error occurred.");
-                    e.printStackTrace();
+                    System.err.println("Error: " + e.getMessage());
                 } catch (IOException e) {
-                    System.out.println("An error occurred.");
-                    e.printStackTrace();
+                    System.err.println("Error: " + e.getMessage());
                 }
 
 
@@ -660,16 +669,6 @@ public class jython {
 
 
 
-
-
-
-
-
-
-                //System.out.println(System.getProperty("user.dir") + "/" + opts.filename);
-
-                exit(Status.OK);
-                System.out.println("exit didn't work :(");
 
 
                 PyString pyFileName = Py.fileSystemEncode(opts.filename);
