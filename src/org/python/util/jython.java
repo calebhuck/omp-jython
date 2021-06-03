@@ -626,10 +626,9 @@ public class jython {
                             j_home = j_home.concat("/");
                         }
                     }
-                    System.out.println("j_home: " + j_home);
-                    //System.out.println("j_home = " + j_home);
+                    //System.out.println("j_home: " + j_home);
                     String absolutePath = FileSystems.getDefault().getPath(opts.filename).normalize().toAbsolutePath().toString();
-                    System.out.println("absolute filename: " + absolutePath);
+                    //System.out.println("absolute filename: " + absolutePath);
                     ProcessBuilder p_builder = null;
                     if (!is_windows)
                         p_builder = new ProcessBuilder("python3", j_home + "/preprocessor/Main.py", absolutePath);
